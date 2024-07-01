@@ -4,10 +4,11 @@ add_executable(popen3_test
     tools/echo.c
     tools/sha256.c
     main.c
+    test.c
     cutest.c
 )
 popen3_setup_target_wall(popen3_test)
 
 add_test(NAME popen3_test
-    COMMAND $<TARGET_FILE:popen3_test>
+    COMMAND $<TARGET_FILE:popen3_test> --self-path=$<TARGET_FILE:popen3_test>
 )
