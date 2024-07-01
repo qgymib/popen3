@@ -1,5 +1,5 @@
 /*********************************************************************
-[<35;118;48M* Filename:   sha256.c
+* Filename:   sha256.c
 * Author:     Brad Conte (brad AT bradconte.com)
 * Copyright:
 * Disclaimer: This code is presented "as is" without any guarantees.
