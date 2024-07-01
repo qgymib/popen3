@@ -2,6 +2,7 @@
 add_executable(popen3_test
     tools/__init__.c
     tools/echo.c
+    tools/sha256.c
     main.c
     cutest.c
 )

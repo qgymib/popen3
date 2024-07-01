@@ -7,7 +7,7 @@ static void _before_all_test(int argc, char* argv[])
 {
     int i;
     const char* opt;
-    
+
     for (i = 0; i < argc; i++)
     {
         opt = "--";
