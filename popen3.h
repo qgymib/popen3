@@ -30,9 +30,29 @@ int popen3(popen3_t** pip, const char* cmd, const char* type);
  */
 int popen3_close(popen3_t* pip);
 
-void popen3_shutdown_stdin(popen3_t* pip);
-void popen3_shutdown_stdout(popen3_t* pip);
-void popen3_shutdown_stderr(popen3_t* pip);
+/**
+ * @brief Close stdin pipe.
+ * @param[in] pip - I/O stream.
+ * @return 0 - Close success.
+ * @return <0 - Errno. The abs value is the errno.
+ */
+int popen3_shutdown_stdin(popen3_t* pip);
+
+/**
+ * @brief Close stdout pipe.
+ * @param[in] pip - I/O stream.
+ * @return 0 - Close success.
+ * @return <0 - Errno. The abs value is the errno.
+ */
+int popen3_shutdown_stdout(popen3_t* pip);
+
+/**
+ * @brief Close stderr pipe.
+ * @param[in] pip - I/O stream.
+ * @return 0 - Close success.
+ * @return <0 - Errno. The abs value is the errno.
+ */
+int popen3_shutdown_stderr(popen3_t* pip);
 
 /**
  * @brief Write to program stdin.

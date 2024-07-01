@@ -488,31 +488,40 @@ int popen3_close(popen3_t* pip)
     return ret;
 }
 
-void popen3_shutdown_stdin(popen3_t* pip)
+int popen3_shutdown_stdin(popen3_t* pip)
 {
-    if (pip->child_stdin != POPEN3_PID_INVALID)
+    if (pip->child_stdin == POPEN3_PIP_INVALID)
     {
-        _popen3_pip_close(pip->child_stdin);
-        pip->child_stdin = POPEN3_PIP_INVALID;
+        return -EALREADY;
     }
+
+    _popen3_pip_close(pip->child_stdin);
+    pip->child_stdin = POPEN3_PIP_INVALID;
+    return 0;
 }
 
-void popen3_shutdown_stdout(popen3_t* pip)
+int popen3_shutdown_stdout(popen3_t* pip)
 {
-    if (pip->child_stdout != POPEN3_PIP_INVALID)
+    if (pip->child_stdout == POPEN3_PIP_INVALID)
     {
-        _popen3_pip_close(pip->child_stdout);
-        pip->child_stdout = POPEN3_PIP_INVALID;
+        return -EALREADY;
     }
+
+    _popen3_pip_close(pip->child_stdout);
+    pip->child_stdout = POPEN3_PIP_INVALID;
+    return 0;
 }
 
-void popen3_shutdown_stderr(popen3_t* pip)
+int popen3_shutdown_stderr(popen3_t* pip)
 {
-    if (pip->child_stderr != POPEN3_PIP_INVALID)
+    if (pip->child_stderr == POPEN3_PIP_INVALID)
     {
-        _popen3_pip_close(pip->child_stderr);
-        pip->child_stderr = POPEN3_PIP_INVALID;
+        return -EALREADY;
     }
+
+    _popen3_pip_close(pip->child_stderr);
+    pip->child_stderr = POPEN3_PIP_INVALID;
+    return 0;
 }
 
 int popen3_stdin(popen3_t* pip, const void* data, size_t size)
