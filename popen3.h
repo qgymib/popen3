@@ -3,6 +3,10 @@
 
 #include <stddef.h>
 
+#define POPEN3_VERSION_MAJOR 1
+#define POPEN3_VERSION_MINOR 0
+#define POPEN3_VERSION_PATCH 0
+
 #ifdef __cplusplus
 extern "C" {
 #endif

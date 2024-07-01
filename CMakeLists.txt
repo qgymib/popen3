@@ -30,3 +30,13 @@ target_include_directories(${PROJECT_NAME}
 
 popen3_setup_target_wall(${PROJECT_NAME})
 
+###############################################################################
+# Test
+###############################################################################
+
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    include(CTest)
+endif()
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+    add_subdirectory(test)
+endif ()
