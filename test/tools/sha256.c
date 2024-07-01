@@ -189,13 +189,13 @@ static int _popen3_test_tool_sha256(int argc, char* argv[])
 
     BYTE hash[SHA256_BLOCK_SIZE];
     sha256_final(&ctx, hash);
-    
+
     size_t i;
     for (i = 0; i < SHA256_BLOCK_SIZE; i++)
     {
         printf("%02x", hash[i]);
     }
-    
+
     return 0;
 }
 
