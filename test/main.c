@@ -60,18 +60,19 @@ static void _before_all_test(int argc, char* argv[])
     }
 }
 
-static cutest_hook_t hook = {
-    _before_all_test, /* .before_all_test */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-};
+
 
 int main(int argc, char* argv[])
 {
+    static cutest_hook_t hook = {
+        _before_all_test, /* .before_all_test */
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+    };
     return cutest_run_tests(argc, argv, stdout, &hook);
 }
