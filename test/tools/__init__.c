@@ -9,6 +9,7 @@ static const popen3_test_tool_t s_popen3_test_tool_help;
 
 static const popen3_test_tool_t* s_tools[] = {
     &popen3_test_tool_echo,
+    &popen3_test_tool_envp,
     &popen3_test_tool_sha256,
     &s_popen3_test_tool_help,
 };

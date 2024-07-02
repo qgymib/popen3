@@ -18,6 +18,7 @@ typedef struct popen3_test_tool
 } popen3_test_tool_t;
 
 extern const popen3_test_tool_t popen3_test_tool_echo;
+extern const popen3_test_tool_t popen3_test_tool_envp;
 extern const popen3_test_tool_t popen3_test_tool_sha256;
 
 int popen3_test_tool_exec(const char* name, int argc, char* argv[]);

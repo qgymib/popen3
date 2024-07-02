@@ -12,8 +12,7 @@ static void _before_all_test(int argc, char* argv[])
 
     for (i = 0; i < argc; i++)
     {
-        opt = "--";
-        if (strcmp(argv[i], opt) == 0)
+        if (strcmp(argv[i], "--") == 0)
         {
             i++;
 
@@ -23,7 +22,7 @@ static void _before_all_test(int argc, char* argv[])
                 exit(EXIT_FAILURE);
             }
 
-            int ret = popen3_test_tool_exec(argv[i], argc - i, argv + 1);
+            int ret = popen3_test_tool_exec(argv[i], argc - i, argv + i);
             exit(ret);
         }
 
@@ -59,8 +58,6 @@ static void _before_all_test(int argc, char* argv[])
         printf("--self-path=%s\n", _G.SELF_PATH);
     }
 }
-
-
 
 int main(int argc, char* argv[])
 {
