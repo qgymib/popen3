@@ -1,5 +1,6 @@
 
 add_executable(popen3_test
+    cases/echo.c
     tools/__init__.c
     tools/echo.c
     tools/envp.c
@@ -7,6 +8,13 @@ add_executable(popen3_test
     main.c
     test.c
     cutest.c
+)
+target_include_directories(popen3_test
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(popen3_test
+    popen3
 )
 popen3_setup_target_wall(popen3_test)
 
