@@ -371,6 +371,7 @@ error_close_status:
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include "popen3.h"
 
 struct popen3_s
@@ -549,6 +550,11 @@ static char** _popen3_copy_array(const char* const arr[])
     size_t alloc_sz = sizeof(char*);
     size_t num_arr = 0;
 
+    if (arr == NULL)
+    {
+        return NULL;
+    }
+
     const char* const *item = arr;
     for (; *item != NULL; item++)
     {
@@ -558,7 +564,7 @@ static char** _popen3_copy_array(const char* const arr[])
     }
 
     char** ret = malloc(alloc_sz);
-    char* copy_pos = (char*)(ret + num_arr);
+    char* copy_pos = (char*)(ret + num_arr + 1);
 
     size_t i;
     for (i = 0; i < num_arr; i++)
@@ -685,15 +691,27 @@ int popen3_shutdown_stderr(popen3_t* pip)
 
 int popen3_stdin(popen3_t* pip, const void* data, size_t size)
 {
+    if (size > INT_MAX)
+    {
+        return -EMSGSIZE;
+    }
     return _popen3_pip_write(pip->child_stdin, data, size);
 }
 
 int popen3_stdout(popen3_t* pip, void* buff, size_t size)
 {
+    if (size > INT_MAX)
+    {
+        return -EMSGSIZE;
+    }
     return _popen3_pip_read(pip->child_stdout, buff, size);
 }
 
 int popen3_stderr(popen3_t* pip, void* buff, size_t size)
 {
+    if (size > INT_MAX)
+    {
+        return -EMSGSIZE;
+    }
     return _popen3_pip_read(pip->child_stderr, buff, size);
 }

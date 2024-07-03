@@ -1,6 +1,8 @@
 
 add_executable(popen3_test
     cases/echo.c
+    cases/envp_empty.c
+    cases/envp_inherit.c
     tools/__init__.c
     tools/echo.c
     tools/envp.c

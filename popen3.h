@@ -74,10 +74,10 @@ int popen3_shutdown_stdout(popen3_t* pip);
 int popen3_shutdown_stderr(popen3_t* pip);
 
 /**
- * @brief Write to program stdin in non-block mode.
+ * @brief Write to program stdin.
  * @param[in] pip - I/O stream.
  * @param[in] data - Data to write.
- * @param[in] size - The bytes of data to write.
+ * @param[in] size - The bytes of data to write. It cannot larger than INT_MAX.
  * @return >=0 - The number of bytes written.
  * @return <0 - A negative number of errno. The abs value is the actual system
  *   error code.
@@ -85,10 +85,10 @@ int popen3_shutdown_stderr(popen3_t* pip);
 int popen3_stdin(popen3_t* pip, const void* data, size_t size);
 
 /**
- * @brief Read from program stdout in non-block mode.
+ * @brief Read from program stdout.
  * @param[in] pip - I/O stream.
  * @param[out] data - Buffer to store data.
- * @param[in] size - The size of buffer.
+ * @param[in] size - The size of buffer. It cannot larger than INT_MAX.
  * @return >=0 - The number of bytes read.
  * @return <0 - A negative number of errno. The abs value is the actual system
  *   error code.
@@ -96,10 +96,10 @@ int popen3_stdin(popen3_t* pip, const void* data, size_t size);
 int popen3_stdout(popen3_t* pip, void* buff, size_t size);
 
 /**
- * @brief Read from program stderr in non-block mode.
+ * @brief Read from program stderr.
  * @param[in] pip - I/O stream.
  * @param[out] data - Buffer to store data.
- * @param[in] size - The size of buffer.
+ * @param[in] size - The size of buffer. It cannot larger than INT_MAX.
  * @return >=0 - The number of bytes read.
  * @return <0 - A negative number of errno. The abs value is the actual system
  *   error code.
