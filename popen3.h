@@ -11,25 +11,35 @@
 extern "C" {
 #endif
 
+typedef enum popen3_flags
+{
+    POPEN3_NULL = 1, /**< Redirect output to `/dev/null'. */
+    POPEN3_PIPE = 2, /**< Open for pipe. */
+    POPEN3_NONBLOCK = 4, /**< Set to non-block mode. */
+} popen3_flags_t;
+
 typedef struct popen3_s popen3_t;
 
 /**
  * @brief Open program by creating a pipe.
  * @param[out] pip - I/O stream for stdin/stdout/stderr.
- * @param[in] file - The file path to execute. If set to NULL, take the first
- *   string from \p argv as the file path.
+ * @param[in] file - The file to execute. If the file does not contains path,
+ *   it searching for an executable file in $PATH. If set to NULL, take the
+ *   first string from \p argv as the file parameter.
  * @param[in] cwd - The working directory. Set to NULL to keep default.
  * @param[in] argv - Command line arguments passed to the file.
  * @param[in] envp - Environments passed to the file. Set to NULL to clear the
  *   environments. To stay the same as host, use `environ`.
- * @param[in] type - a null‐terminated string which must contain at least one
- *   letter. 'i' for open stdin, 'o' for open stdout, 'e' for open stderr.
+ * @param[in] iflags - Flags for stdin. Set to 0 to inherit from parent. See #popen3_flags_t.
+ * @param[in] oflags - Flags for stdout. Set to 0 to inherit from parent. See #popen3_flags_t.
+ * @param[in] eflags - Flags for stderr. Set to 0 to inherit from parent. See #popen3_flags_t.
  * @return 0 - Open success.
  * @return <0 - A negative number for errno. The abs value is the actual system
  *   error code.
  */
 int popen3(popen3_t** pip, const char* file, const char* cwd,
-    const char* const argv[], const char* const envp[],  const char* type);
+    const char* const argv[], const char* const envp[],
+    int iflags, int oflags, int eflags);
 
 /**
  * @brief Wait for program exit and close pipe.

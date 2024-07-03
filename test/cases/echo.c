@@ -17,7 +17,7 @@ TEST(echo, echo)
         "echo",
         NULL,
     };
-    ASSERT_EQ_INT(popen3(&pip, NULL, NULL, argv, (const char* const*)environ, "io"), 0);
+    ASSERT_EQ_INT(popen3(&pip, NULL, NULL, argv, (const char* const*)environ, POPEN3_PIPE, POPEN3_PIPE, POPEN3_NULL), 0);
 
     ASSERT_EQ_INT(popen3_close(pip), 0);
 }

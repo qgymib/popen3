@@ -1,18 +1,31 @@
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-#include "popen3.h"
-
 #if defined(_WIN32)
+
+/******************************************************************************
+ * Windows Porting
+ *****************************************************************************/
+
+#include <Windows.h>
+
+typedef HANDLE popen3_pid_t;
+#define POPEN3_PID_INVALID INVALID_HANDLE_VALUE
+
+typedef HANDLE popen3_pip_t;
+#define POPEN3_PIP_INVALID INVALID_HANDLE_VALUE
+
 #else
 
+/******************************************************************************
+ * Linux Porting
+ *****************************************************************************/
+
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <stdlib.h>
 
 typedef pid_t popen3_pid_t;
 #define POPEN3_PID_INVALID -1
@@ -237,37 +250,53 @@ static int _popen3_pip_read(popen3_pip_t pip, void* buff, size_t size)
 }
 
 static void _popen3_execute_child(const char* file, const char* cwd,
-    char* const argv[], char* const envp[], popen3_pid_t pstatus[2], popen3_pip_t stdioe[3])
+    char* const argv[], char* const envp[], popen3_pid_t pstatus[2],
+    popen3_pip_t stdioe[3])
 {
+    int errcode = 0;
+    ssize_t write_sz;
+
     _popen3_pip_close(pstatus[0]);
     pstatus[0] = POPEN3_PIP_INVALID;
 
     if (cwd != NULL)
     {
-        chdir(cwd);
+        if (chdir(cwd) != 0)
+        {
+            goto error;
+        }
     }
 
     if (stdioe[0] != POPEN3_PIP_INVALID)
     {
-        dup2(stdioe[0], STDIN_FILENO);
+        if (dup2(stdioe[0], STDIN_FILENO) < 0)
+        {
+            goto error;
+        }
     }
     if (stdioe[1] != POPEN3_PIP_INVALID)
     {
-        dup2(stdioe[1], STDOUT_FILENO);
+        if (dup2(stdioe[1], STDOUT_FILENO) < 0)
+        {
+            goto error;
+        }
     }
     if (stdioe[2] != POPEN3_PIP_INVALID)
     {
-        dup2(stdioe[2], STDERR_FILENO);
+        if (dup2(stdioe[2], STDERR_FILENO) < 0)
+        {
+            goto error;
+        }
     }
 
     execvpe(file, argv, envp);
 
-    ssize_t n;
-    int errcode = -errno;
+error:
+    errcode = -errno;
     do
     {
-        n = write(pstatus[1], &errcode, sizeof(errcode));
-    } while (n == -1 && errno == EINTR); 
+        write_sz = write(pstatus[1], &errcode, sizeof(errcode));
+    } while (write_sz == -1 && errno == EINTR); 
 }
 
 static int _popen3_execute(popen3_pid_t* pid, const char* file, const char* cwd,
@@ -336,12 +365,27 @@ error_close_status:
 
 #endif
 
+/******************************************************************************
+ * popen3
+ *****************************************************************************/
+
+#include <stdio.h>
+#include <string.h>
+#include "popen3.h"
+
 struct popen3_s
 {
     popen3_pid_t child_pid;
     popen3_pip_t child_stdin;
     popen3_pip_t child_stdout;
     popen3_pip_t child_stderr;
+
+    char** argv;
+    char** envp;
+
+    int iflags;
+    int oflags;
+    int eflags;
 };
 
 typedef struct popen3_open_helper
@@ -351,11 +395,12 @@ typedef struct popen3_open_helper
     popen3_pip_t pipe_stderr[2];
 } popen3_open_helper_t;
 
-static int _popen3_setup_pipe(popen3_open_helper_t* helper, const char* type)
+static int _popen3_setup_pipe(popen3_open_helper_t* helper, int iflags,
+    int oflags, int eflags)
 {
     int ret = 0;
 
-    if (strchr(type, 'i') != NULL)
+    if (iflags & POPEN3_PIPE)
     {
         if ((ret = _popen3_pip_open(helper->pipe_stdin)) != 0)
         {
@@ -365,10 +410,18 @@ static int _popen3_setup_pipe(popen3_open_helper_t* helper, const char* type)
         {
             goto error_close_stdin;
         }
-        if ((ret = _popen3_pip_nonblock(helper->pipe_stdin[1], 1)) != 0)
+        if (iflags & POPEN3_NONBLOCK)
         {
-            goto error_close_stdin;
+            if ((ret = _popen3_pip_nonblock(helper->pipe_stdin[1], 1)) != 0)
+            {
+                goto error_close_stdin;
+            }
         }
+    }
+    else if (iflags & POPEN3_NULL)
+    {
+        helper->pipe_stdin[0] = open("/dev/null", O_RDONLY);
+        helper->pipe_stdin[1] = POPEN3_PIP_INVALID;
     }
     else
     {
@@ -376,7 +429,7 @@ static int _popen3_setup_pipe(popen3_open_helper_t* helper, const char* type)
         helper->pipe_stdin[1] = POPEN3_PIP_INVALID;
     }
 
-    if (strchr(type, 'o') != NULL)
+    if (oflags & POPEN3_PIPE)
     {
         if ((ret = _popen3_pip_open(helper->pipe_stdout)) != 0)
         {
@@ -386,10 +439,18 @@ static int _popen3_setup_pipe(popen3_open_helper_t* helper, const char* type)
         {
             goto error_close_stdout;
         }
-        if ((ret = _popen3_pip_nonblock(helper->pipe_stdout[0], 1)) != 0)
+        if (oflags & POPEN3_NONBLOCK)
         {
-            goto error_close_stdout;
+            if ((ret = _popen3_pip_nonblock(helper->pipe_stdout[0], 1)) != 0)
+            {
+                goto error_close_stdout;
+            }
         }
+    }
+    else if (oflags & POPEN3_NULL)
+    {
+        helper->pipe_stdout[0] = POPEN3_PIP_INVALID;
+        helper->pipe_stdout[1] = open("/dev/null", O_WRONLY);
     }
     else
     {
@@ -397,7 +458,7 @@ static int _popen3_setup_pipe(popen3_open_helper_t* helper, const char* type)
         helper->pipe_stdout[1] = POPEN3_PIP_INVALID;
     }
 
-    if (strchr(type, 'e') != NULL)
+    if (eflags & POPEN3_PIPE)
     {
         if ((ret = _popen3_pip_open(helper->pipe_stderr)) != 0)
         {
@@ -407,10 +468,18 @@ static int _popen3_setup_pipe(popen3_open_helper_t* helper, const char* type)
         {
             goto error_close_stderr;
         }
-        if ((ret = _popen3_pip_nonblock(helper->pipe_stderr[0], 1)) != 0)
+        if (eflags & POPEN3_NONBLOCK)
         {
-            goto error_close_stderr;
+            if ((ret = _popen3_pip_nonblock(helper->pipe_stderr[0], 1)) != 0)
+            {
+                goto error_close_stderr;
+            }
         }
+    }
+    else if (eflags & POPEN3_NULL)
+    {
+        helper->pipe_stderr[0] = POPEN3_PIP_INVALID;
+        helper->pipe_stderr[1] = open("/dev/null", O_WRONLY);
     }
     else
     {
@@ -439,13 +508,12 @@ finish:
     return ret;
 }
 
-static int _popen3(popen3_t* pip, const char* file, const char* cwd,
-    char* const argv[], char* const envp[],  const char* type)
+static int _popen3(popen3_t* pip, const char* file, const char* cwd)
 {
     int ret = 0;
 
     popen3_open_helper_t helper;
-    if ((ret = _popen3_setup_pipe(&helper, type)) != 0)
+    if ((ret = _popen3_setup_pipe(&helper, pip->iflags, pip->oflags, pip->eflags)) != 0)
     {
         return ret;
     }
@@ -453,9 +521,9 @@ static int _popen3(popen3_t* pip, const char* file, const char* cwd,
     popen3_pip_t stdioe[] = {
         helper.pipe_stdin[0],
         helper.pipe_stdout[1],
-        helper.pipe_stderr[2],
+        helper.pipe_stderr[1],
     };
-    ret = _popen3_execute(&pip->child_pid, file, cwd, argv, envp, stdioe);
+    ret = _popen3_execute(&pip->child_pid, file, cwd, pip->argv, pip->envp, stdioe);
 
     _popen3_pip_close(helper.pipe_stdin[0]);
     helper.pipe_stdin[0] = POPEN3_PIP_INVALID;
@@ -466,11 +534,16 @@ static int _popen3(popen3_t* pip, const char* file, const char* cwd,
 
     pip->child_stdin = helper.pipe_stdin[1];
     pip->child_stdout = helper.pipe_stdout[0];
-    pip->child_stderr = helper.pipe_stderr[1];
+    pip->child_stderr = helper.pipe_stderr[0];
 
     return ret;
 }
 
+/**
+ * @brief Deep copy a string array.
+ * @param[in] arr - The string array to copy.
+ * @return The copied string array. Use free() to release it.
+ */
 static char** _popen3_copy_array(const char* const arr[])
 {
     size_t alloc_sz = sizeof(char*);
@@ -500,8 +573,20 @@ static char** _popen3_copy_array(const char* const arr[])
     return ret;
 }
 
+static int _popen3_close_waitpid(popen3_t* pip)
+{
+    if (pip->child_pid == POPEN3_PID_INVALID)
+    {
+        return -EALREADY;
+    }
+    int ret = _popen3_waitpid(pip->child_pid);
+    pip->child_pid = POPEN3_PID_INVALID;
+    return ret;
+}
+
 int popen3(popen3_t** pip, const char* file, const char* cwd,
-    const char* const argv[], const char* const envp[],  const char* type)
+    const char* const argv[], const char* const envp[],
+    int iflags, int oflags, int eflags)
 {
     int ret = 0;
     if (file == NULL)
@@ -525,15 +610,16 @@ int popen3(popen3_t** pip, const char* file, const char* cwd,
     (*pip)->child_stdin = POPEN3_PIP_INVALID;
     (*pip)->child_stdout = POPEN3_PIP_INVALID;
     (*pip)->child_stderr = POPEN3_PIP_INVALID;
+    (*pip)->argv = _popen3_copy_array(argv);
+    (*pip)->envp = _popen3_copy_array(envp);
+    (*pip)->iflags = iflags;
+    (*pip)->oflags = oflags;
+    (*pip)->eflags = eflags;
 
-    char** cpy_argv = _popen3_copy_array(argv);
-    char** cpy_envp = _popen3_copy_array(envp);
-    if ((ret = _popen3(*pip, file, cwd, cpy_argv, cpy_envp, type)) < 0)
+    if ((ret = _popen3(*pip, file, cwd)) < 0)
     {
         popen3_close(*pip);
     }
-    free(cpy_argv);
-    free(cpy_envp);
 
     return ret;
 }
@@ -544,12 +630,18 @@ int popen3_close(popen3_t* pip)
     popen3_shutdown_stdout(pip);
     popen3_shutdown_stderr(pip);
 
-    int ret = -EALREADY;
-    if (pip->child_pid != POPEN3_PID_INVALID)
+    if (pip->argv != NULL)
     {
-        ret = _popen3_waitpid(pip->child_pid);
-        pip->child_pid = POPEN3_PID_INVALID;
+        free(pip->argv);
+        pip->argv = NULL;
     }
+    if (pip->envp != NULL)
+    {
+        free(pip->envp);
+        pip->envp = NULL;
+    }
+
+    int ret = _popen3_close_waitpid(pip);
 
     free(pip);
     return ret;
