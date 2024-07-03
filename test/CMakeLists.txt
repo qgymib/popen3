@@ -21,5 +21,5 @@ target_link_libraries(popen3_test
 popen3_setup_target_wall(popen3_test)
 
 add_test(NAME popen3_test
-    COMMAND $<TARGET_FILE:popen3_test> --self-path=$<TARGET_FILE:popen3_test>
+    COMMAND $<TARGET_FILE:popen3_test>
 )
