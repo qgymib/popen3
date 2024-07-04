@@ -14,6 +14,7 @@ static char* _popen3_test_exepath(void)
     {
         abort();
     }
+    buff[buff_sz - 1] = '\0';
 
     return buff;
 }
@@ -21,6 +22,8 @@ static char* _popen3_test_exepath(void)
 static void _before_all_test(int argc, char* argv[])
 {
     int i;
+    _G.SELF_PATH = _popen3_test_exepath();
+
     for (i = 0; i < argc; i++)
     {
         if (strcmp(argv[i], "--") == 0)
@@ -37,8 +40,6 @@ static void _before_all_test(int argc, char* argv[])
             exit(ret);
         }
     }
-
-    _G.SELF_PATH = _popen3_test_exepath();
 }
 
 static void _after_all_test(void)
